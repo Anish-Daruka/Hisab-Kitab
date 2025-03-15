@@ -236,6 +236,12 @@
       "languageVersion": "3.2"
     },
     {
+      "name": "nested",
+      "rootUri": "file:///Users/anishdaruka/.pub-cache/hosted/pub.dev/nested-1.0.0",
+      "packageUri": "lib/",
+      "languageVersion": "2.12"
+    },
+    {
       "name": "path",
       "rootUri": "file:///Users/anishdaruka/.pub-cache/hosted/pub.dev/path-1.9.1",
       "packageUri": "lib/",
@@ -294,6 +300,12 @@
       "rootUri": "file:///Users/anishdaruka/.pub-cache/hosted/pub.dev/postgrest-2.4.1",
       "packageUri": "lib/",
       "languageVersion": "3.0"
+    },
+    {
+      "name": "provider",
+      "rootUri": "file:///Users/anishdaruka/.pub-cache/hosted/pub.dev/provider-6.1.2",
+      "packageUri": "lib/",
+      "languageVersion": "2.12"
     },
     {
       "name": "realtime_client",
@@ -518,7 +530,7 @@
       "languageVersion": "3.7"
     }
   ],
-  "generated": "2025-03-13T10:27:38.789023Z",
+  "generated": "2025-03-14T17:23:04.853846Z",
   "generator": "pub",
   "generatorVersion": "3.7.0",
   "flutterRoot": "file:///Users/anishdaruka/Desktop/development/flutter",
