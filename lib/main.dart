@@ -7,10 +7,11 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await Supabase.initialize(
-    url: 'https://qcjovsotomulhqjckaal.supabase.co',
-    anonKey: String.fromEnvironment('SUPABASE_KEY'),
+    url: 'https://etvsmzocqgxctjtpzjlu.supabase.co',
+    anonKey:
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV0dnNtem9jcWd4Y3RqdHB6amx1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE0Mzk5MDEsImV4cCI6MjA1NzAxNTkwMX0.kqVYtMpJxmbfZEk6FQnd9Wv2TUWmU8b4nMHWsmxkPYU',
   );
-
+  print(Supabase.instance.client.auth); // added print statement
   runApp(const MyApp());
 }
 
@@ -105,14 +106,22 @@ class _SignInPageState extends State<SignInPage> {
       setState(() {
         _isLoading = true;
       });
+      print("hello1");
       final GoogleSignIn _googleSignIn = GoogleSignIn(
         clientId:
             "784636982557-of7hktstodckistnt9irqa643vub4rdn.apps.googleusercontent.com", // Set explicitly
         scopes: ['email'],
       );
+      print("hello2");
       // Disconnect any previous session to allow selection of a different account
-      await _googleSignIn.disconnect();
+
+      try {
+        await _googleSignIn.disconnect();
+      } catch (e) {
+        print("Error disconnecting: $e");
+      }
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      print("hello3");
       if (googleUser == null) {
         // User canceled the sign-in flow
         setState(() {
@@ -123,12 +132,15 @@ class _SignInPageState extends State<SignInPage> {
       // Get auth details from Google
       final GoogleSignInAuthentication googleAuth =
           await googleUser.authentication;
+      print("hello4");
+      print(Supabase.instance.client.auth); //
       // Sign in to Supabase with Google OAuth
       final AuthResponse res = await _supabase.auth.signInWithIdToken(
         provider: OAuthProvider.google,
         idToken: googleAuth.idToken!,
         accessToken: googleAuth.accessToken,
       );
+      print("hello5");
       if (res.user != null) {
         // Successfully signed in
         Navigator.of(context).pushReplacement(
