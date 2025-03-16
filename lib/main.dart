@@ -113,8 +113,6 @@ class _SignInPageState extends State<SignInPage> {
       // Disconnect any previous session to allow selection of a different account
       await _googleSignIn.disconnect();
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-
-      print("here");
       if (googleUser == null) {
         // User canceled the sign-in flow
         setState(() {
@@ -122,25 +120,15 @@ class _SignInPageState extends State<SignInPage> {
         });
         return;
       }
-
-      print('Google user: ${googleUser.email}');
-
       // Get auth details from Google
       final GoogleSignInAuthentication googleAuth =
           await googleUser.authentication;
-      print("here");
-      print("Using Client ID: ${_googleSignIn.clientId}");
-
-      print("ID Token: ${googleAuth.idToken}");
-      print("Access Token: ${googleAuth.accessToken}");
       // Sign in to Supabase with Google OAuth
       final AuthResponse res = await _supabase.auth.signInWithIdToken(
         provider: OAuthProvider.google,
         idToken: googleAuth.idToken!,
         accessToken: googleAuth.accessToken,
       );
-      print("signed in");
-
       if (res.user != null) {
         // Successfully signed in
         Navigator.of(context).pushReplacement(
