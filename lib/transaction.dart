@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'home.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'global.dart';
 
 class Transaction extends StatefulWidget {
   const Transaction({super.key});
@@ -17,7 +18,6 @@ final TextEditingController _categoryController = TextEditingController();
 // Notifier to track transactions and loading state
 class TransactionsNotifier extends ChangeNotifier {
   bool isLoading = false;
-  List<Map<String, dynamic>> transactions = [];
 
   Future<void> fetchTransactions() async {
     final user = supabase.auth.currentUser;
@@ -134,13 +134,12 @@ class _TransactionState extends State<Transaction> {
           Expanded(
             child: Consumer<TransactionsNotifier>(
               builder: (context, notifier, child) {
-                print(111);
-                return notifier.transactions.isEmpty
+                return transactions.isEmpty
                     ? const Center(child: Text('No transactions found'))
                     : ListView.builder(
-                      itemCount: notifier.transactions.length,
+                      itemCount: transactions.length,
                       itemBuilder: (context, index) {
-                        final transaction = notifier.transactions[index];
+                        final transaction = transactions[index];
                         return ListTile(
                           title: Text('${transaction['category']}'),
                           subtitle: Text('${transaction['amount']} USD'),
