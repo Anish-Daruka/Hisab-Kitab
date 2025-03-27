@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:provider/provider.dart';
+import 'home.dart';
+import 'transaction.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -12,7 +14,12 @@ void main() async {
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV0dnNtem9jcWd4Y3RqdHB6amx1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE0Mzk5MDEsImV4cCI6MjA1NzAxNTkwMX0.kqVYtMpJxmbfZEk6FQnd9Wv2TUWmU8b4nMHWsmxkPYU',
   );
   print(Supabase.instance.client.auth); // added print statement
-  runApp(const MyApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => TransactionsNotifier(),
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -26,7 +33,8 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: const SignInPage(),
+      home: Home(),
+      // home: const SignInPage(),
     );
   }
 }
@@ -106,22 +114,22 @@ class _SignInPageState extends State<SignInPage> {
       setState(() {
         _isLoading = true;
       });
-      print("hello1");
       final GoogleSignIn _googleSignIn = GoogleSignIn(
         clientId:
             "784636982557-of7hktstodckistnt9irqa643vub4rdn.apps.googleusercontent.com", // Set explicitly
         scopes: ['email'],
       );
-      print("hello2");
       // Disconnect any previous session to allow selection of a different account
 
-      try {
-        await _googleSignIn.disconnect();
-      } catch (e) {
-        print("Error disconnecting: $e");
-      }
+      // try {
+      //   await _googleSignIn.disconnect();
+      // } catch (e) {
+      //   print("Error disconnecting: $e");
+      // }
+      print("Signing in with Google");
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      print("hello3");
+      print("hello1");
+
       if (googleUser == null) {
         // User canceled the sign-in flow
         setState(() {
@@ -132,20 +140,33 @@ class _SignInPageState extends State<SignInPage> {
       // Get auth details from Google
       final GoogleSignInAuthentication googleAuth =
           await googleUser.authentication;
-      print("hello4");
-      print(Supabase.instance.client.auth); //
+      print("hello"); //
       // Sign in to Supabase with Google OAuth
       final AuthResponse res = await _supabase.auth.signInWithIdToken(
         provider: OAuthProvider.google,
         idToken: googleAuth.idToken!,
         accessToken: googleAuth.accessToken,
       );
-      print("hello5");
       if (res.user != null) {
+        // Check if user exists in the user table
+        final response = await _supabase
+            .from('users')
+            .select()
+            .eq('id', res.user!.id);
+
+        if (response.isEmpty) {
+          // User does not exist, insert into user table
+          await _supabase.from('users').insert({
+            'id': res.user!.id,
+            'email': googleUser.email,
+            'name': googleUser.displayName,
+            'created_at': DateTime.now().toIso8601String(),
+          });
+        }
         // Successfully signed in
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const HomePage()),
-        );
+        Navigator.of(
+          context,
+        ).pushReplacement(MaterialPageRoute(builder: (context) => Home()));
       }
     } catch (error) {
       setState(() {
