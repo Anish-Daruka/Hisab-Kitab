@@ -5,42 +5,64 @@ List<Map<int, DateTime>> ts = [];
 List<Map<String, dynamic>> transactions = [];
 
 class Global {
-  static Map<String, double> getExpensesByCategory() {
+  // Returns monthly expense bar groups
+  static List<BarChartGroupData> getBarChartGroups() {
+    List<BarChartGroupData> barGroups = [];
+    List<double> expenses = [];
+    List<String> months = [];
+    transactions.forEach((tx) {
+      DateTime date = DateTime.parse(tx['date']);
+      int month = date.month;
+      int year = date.year;
+      double amount = tx['amount'];
+      int index = months.indexOf('$month-$year');
+      if (index == -1) {
+        months.add('$month-$year');
+        expenses.add(amount);
+      } else {
+        expenses[index] += amount;
+      }
+    });
+    for (int i = 0; i < months.length; i++) {
+      barGroups.add(
+        BarChartGroupData(
+          x: i,
+          barRods: [BarChartRodData(toY: expenses[i], color: Colors.blue)],
+        ),
+      );
+      print("barGroups: $barGroups");
+    }
+    return barGroups;
+  }
+
+  // Returns a list of expenses grouped by category
+  static List<CategoryExpense> getCategoryExpenses() {
     Map<String, double> dataMap = {};
-    for (var tx in transactions) {
+    transactions.forEach((tx) {
       final String category = tx['category'] ?? 'Unknown';
       final double amount =
           (tx['amount'] is num) ? tx['amount'].toDouble() : 0.0;
       dataMap[category] = (dataMap[category] ?? 0) + amount;
-    }
-    return dataMap;
-  }
-
-  static List<CategoryExpense> getCategoryExpenses() {
-    final dataMap = getExpensesByCategory();
+    });
     return dataMap.entries.map((e) => CategoryExpense(e.key, e.value)).toList();
   }
 
-  static List<BarChartGroupData> getBarChartGroups() {
-    final chartData = getCategoryExpenses();
-    List<BarChartGroupData> groups = [];
-    for (int i = 0; i < chartData.length; i++) {
-      groups.add(
-        BarChartGroupData(
-          x: i,
-          barRods: [
-            BarChartRodData(
-              toY: chartData[i].amount,
-              color: Colors.blue,
-              width: 22,
-              borderRadius: BorderRadius.circular(4),
-            ),
-          ],
-          showingTooltipIndicators: [0],
-        ),
-      );
-    }
-    return groups;
+  static String getMonthName(int month) {
+    const monthNames = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ];
+    return monthNames[month - 1];
   }
 }
 

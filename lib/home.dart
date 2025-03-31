@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:provider/provider.dart';
 import 'main.dart';
 import 'transaction.dart';
+import 'analytics.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -17,7 +18,6 @@ class _HomeState extends State<Home> {
   Widget build(BuildContext context) {
     final user = supabase.auth.currentUser;
     return Scaffold(
-      // Updated AppBar for home screen
       appBar: AppBar(
         title: const Text('Hisab-Kitab'),
         actions: [
@@ -32,14 +32,21 @@ class _HomeState extends State<Home> {
           ),
         ],
       ),
-      body: Transaction(),
+      // Updated body using IndexedStack to navigate screens in place
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: const [
+          Transaction(),
+          Analytics(),
+          Center(child: Text('Share Page')),
+        ],
+      ),
       bottomNavigationBar: BottomNavigationBar(
         elevation: 8,
         currentIndex: _selectedIndex,
         onTap: (int index) {
           setState(() {
             _selectedIndex = index;
-            // Add navigation actions if needed
           });
         },
         items: const [
