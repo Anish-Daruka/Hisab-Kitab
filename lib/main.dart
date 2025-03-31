@@ -4,6 +4,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:provider/provider.dart';
 import 'home.dart';
 import 'transaction.dart';
+import 'NewUser.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -33,8 +34,7 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: Home(),
-      // home: const SignInPage(),
+      home: SignInPage(),
     );
   }
 }
@@ -55,54 +55,78 @@ class _SignInPageState extends State<SignInPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const FlutterLogo(size: 100),
-              const SizedBox(height: 40),
-              const Text(
-                'Welcome',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Sign in to continue',
-                style: TextStyle(fontSize: 16, color: Colors.grey),
-              ),
-              const SizedBox(height: 40),
-              _isLoading
-                  ? const CircularProgressIndicator()
-                  : ElevatedButton.icon(
-                    label: const Text(
-                      'Sign in with Google',
-                      style: TextStyle(fontSize: 16),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: Colors.black87,
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 12,
-                        horizontal: 16,
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // App Logo
+                const Icon(
+                  Icons.map_outlined,
+                  size: 100,
+                  color: Color(0xFF4285F4),
+                ),
+
+                const SizedBox(height: 20),
+
+                // App Name
+                const Text(
+                  'Expense Map',
+                  style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+                ),
+
+                const SizedBox(height: 8),
+
+                // App Tagline
+                const Text(
+                  'Track your expenses, visualize your spending',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 16, color: Colors.grey),
+                ),
+
+                const SizedBox(height: 50),
+
+                // Sign in Button
+                _isLoading
+                    ? const CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        Color(0xFF4285F4),
                       ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        side: const BorderSide(color: Colors.grey, width: 1),
+                    )
+                    : ElevatedButton.icon(
+                      label: const Text(
+                        'Sign in with Google',
+                        style: TextStyle(fontSize: 16, color: Colors.black87),
                       ),
-                      minimumSize: const Size(double.infinity, 50),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: Colors.black87,
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 12,
+                          horizontal: 16,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          side: const BorderSide(color: Colors.grey, width: 1),
+                        ),
+                        minimumSize: const Size(double.infinity, 50),
+                      ),
+                      onPressed: _signInWithGoogle,
                     ),
-                    onPressed: _signInWithGoogle,
-                  ),
-              const SizedBox(height: 20),
-              TextButton(
-                onPressed: () {
-                  // Navigate to your registration page
-                },
-                child: const Text('Don\'t have an account? Sign up'),
-              ),
-            ],
+
+                const SizedBox(height: 20),
+
+                // Terms and Privacy
+                const Text(
+                  'By signing in, you agree to our Terms of Service and Privacy Policy',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 12, color: Color(0xFF9E9E9E)),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -148,25 +172,26 @@ class _SignInPageState extends State<SignInPage> {
         accessToken: googleAuth.accessToken,
       );
       if (res.user != null) {
+        print("successfully authenticated");
         // Check if user exists in the user table
         final response = await _supabase
             .from('users')
             .select()
             .eq('id', res.user!.id);
+        print("response: $response");
 
         if (response.isEmpty) {
-          // User does not exist, insert into user table
-          await _supabase.from('users').insert({
-            'id': res.user!.id,
-            'email': googleUser.email,
-            'name': googleUser.displayName,
-            'created_at': DateTime.now().toIso8601String(),
-          });
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => CreateAccount()),
+          );
+
+          print("why reached here...");
+        } else {
+          // Successfully signed in
+          Navigator.of(
+            context,
+          ).pushReplacement(MaterialPageRoute(builder: (context) => Home()));
         }
-        // Successfully signed in
-        Navigator.of(
-          context,
-        ).pushReplacement(MaterialPageRoute(builder: (context) => Home()));
       }
     } catch (error) {
       setState(() {
@@ -185,41 +210,5 @@ class _SignInPageState extends State<SignInPage> {
         });
       }
     }
-  }
-}
-
-class HomePage extends StatelessWidget {
-  const HomePage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final user = Supabase.instance.client.auth.currentUser;
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Home'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              await Supabase.instance.client.auth.signOut();
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (context) => const SignInPage()),
-              );
-            },
-          ),
-        ],
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text('Welcome to the app!', style: TextStyle(fontSize: 24)),
-            const SizedBox(height: 20),
-            Text('Signed in as: ${user?.email}'),
-          ],
-        ),
-      ),
-    );
   }
 }

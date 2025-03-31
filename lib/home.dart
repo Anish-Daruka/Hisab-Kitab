@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'main.dart';
 import 'transaction.dart';
 import 'analytics.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -12,6 +13,7 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
+  final GoogleSignIn _googleSignIn = GoogleSignIn(); // Initialize GoogleSignIn
   int _selectedIndex = 0; // state for bottom navigation
 
   @override
@@ -24,7 +26,11 @@ class _HomeState extends State<Home> {
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () async {
-              await Supabase.instance.client.auth.signOut();
+              try {
+                await _googleSignIn.disconnect();
+              } catch (e) {
+                print("Error disconnecting: $e");
+              }
               Navigator.of(context).pushReplacement(
                 MaterialPageRoute(builder: (context) => const SignInPage()),
               );

@@ -5,34 +5,56 @@ List<Map<int, DateTime>> ts = [];
 List<Map<String, dynamic>> transactions = [];
 
 class Global {
-  // Returns monthly expense bar groups
-  static List<BarChartGroupData> getBarChartGroups() {
-    List<BarChartGroupData> barGroups = [];
-    List<double> expenses = [];
+  // Returns monthly and daily expense bar groups
+  static List<BarChartGroupData> barGroupsmonth = [];
+  static List<BarChartGroupData> barGroupsday = [];
+  static void getBarChartGroups() {
+    barGroupsmonth = [];
+    barGroupsday = [];
+
+    List<double> expensesmonth = [];
+    List<double> expensesday = [];
     List<String> months = [];
+    List<String> days = [];
     transactions.forEach((tx) {
       DateTime date = DateTime.parse(tx['date']);
+      int day = date.day;
       int month = date.month;
       int year = date.year;
       double amount = tx['amount'];
-      int index = months.indexOf('$month-$year');
-      if (index == -1) {
+      int indexMonth = months.indexOf('$month-$year');
+      int indexDay = days.indexOf('$day-$month-$year');
+      if (indexMonth == -1) {
         months.add('$month-$year');
-        expenses.add(amount);
+        expensesmonth.add(amount);
       } else {
-        expenses[index] += amount;
+        expensesmonth[indexMonth] += amount;
+      }
+      if (indexDay == -1) {
+        days.add('$day-$month-$year');
+        expensesday.add(amount);
+      } else {
+        expensesday[indexDay] += amount;
       }
     });
+
     for (int i = 0; i < months.length; i++) {
-      barGroups.add(
+      barGroupsmonth.add(
         BarChartGroupData(
           x: i,
-          barRods: [BarChartRodData(toY: expenses[i], color: Colors.blue)],
+          barRods: [BarChartRodData(toY: expensesmonth[i], color: Colors.blue)],
         ),
       );
-      print("barGroups: $barGroups");
     }
-    return barGroups;
+
+    for (int i = 0; i < days.length; i++) {
+      barGroupsday.add(
+        BarChartGroupData(
+          x: i,
+          barRods: [BarChartRodData(toY: expensesday[i], color: Colors.green)],
+        ),
+      );
+    }
   }
 
   // Returns a list of expenses grouped by category
