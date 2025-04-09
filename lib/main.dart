@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'home.dart';
 import 'transaction.dart';
 import 'NewUser.dart';
+import 'global.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -187,6 +188,7 @@ class _SignInPageState extends State<SignInPage> {
 
           print("why reached here...");
         } else {
+          Global.userId = Supabase.instance.client.auth.currentUser?.id;
           // Successfully signed in
           Navigator.of(
             context,

@@ -5,6 +5,8 @@ List<Map<int, DateTime>> ts = [];
 List<Map<String, dynamic>> transactions = [];
 
 class Global {
+  static String? userId;
+  static String? username;
   // Returns monthly and daily expense bar groups
   static List<BarChartGroupData> barGroupsmonth = [];
   static List<BarChartGroupData> barGroupsday = [];

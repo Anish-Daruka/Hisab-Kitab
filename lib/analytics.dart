@@ -51,7 +51,6 @@ class _AnalyticsState extends State<Analytics> {
         }
       }
     }
-    labels = labels.reversed.toList();
     print(labels);
     final double maxY =
         barGroups.isNotEmpty

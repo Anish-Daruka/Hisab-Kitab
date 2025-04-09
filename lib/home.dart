@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:hisab_kitab/group.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:provider/provider.dart';
 import 'main.dart';
 import 'transaction.dart';
 import 'analytics.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'group.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -41,11 +43,7 @@ class _HomeState extends State<Home> {
       // Updated body using IndexedStack to navigate screens in place
       body: IndexedStack(
         index: _selectedIndex,
-        children: const [
-          Transaction(),
-          Analytics(),
-          Center(child: Text('Share Page')),
-        ],
+        children: [Transaction(), Analytics(), GroupPage()],
       ),
       bottomNavigationBar: BottomNavigationBar(
         elevation: 8,
