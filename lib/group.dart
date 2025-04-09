@@ -47,6 +47,7 @@ class _GroupPageState extends State<GroupPage> {
   }
 
   Future<void> _deleteGroup(dynamic groupId) async {
+    print("deleting group.......");
     await supabase.from('groups').delete().eq('id', groupId);
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Group Deleted Successfully!')),
@@ -55,9 +56,18 @@ class _GroupPageState extends State<GroupPage> {
   }
 
   Future<void> _deleteIndividual(dynamic individualId) async {
+    print("deleting individual......");
     await supabase.from('groups').delete().eq('id', individualId);
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Group Deleted Successfully!')),
+    );
+    _fetchIndividual();
+  }
+
+  void _deleteIndividualEntry(Map<String, dynamic> individual) async {
+    await supabase.from('individual').delete().eq('id', individual['id']);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Individual entry deleted successfully!')),
     );
     _fetchIndividual();
   }
@@ -67,7 +77,7 @@ class _GroupPageState extends State<GroupPage> {
       final response =
           await supabase.from('groups').insert({
             'name': _groupNameController.text,
-            'created_by': supabase.auth.currentUser?.id,
+            'created_by': Global.userId,
             'created_at': DateTime.now().toIso8601String(),
           }).select();
 
@@ -93,7 +103,6 @@ class _GroupPageState extends State<GroupPage> {
     });
   }
 
-  // Updated method - removed return type and changed to show dialog
   void _sendJoinRequest(String userId) {
     print("sending join request to $userId");
 
@@ -171,6 +180,9 @@ class _GroupPageState extends State<GroupPage> {
                             'transaction_type': _transactionType,
                             'created_at': DateTime.now().toIso8601String(),
                           });
+                          _fetchIndividual();
+                          _amountController.clear();
+                          _transactionType = 'pay';
                           _searchController.clear();
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(content: Text('Join request sent!')),
@@ -227,7 +239,6 @@ class _GroupPageState extends State<GroupPage> {
               width: MediaQuery.of(context).size.width,
               child: Column(
                 children: [
-                  // Replace toggle row with two styled buttons:
                   Positioned(
                     top: 16,
                     left: 16,
@@ -305,23 +316,15 @@ class _GroupPageState extends State<GroupPage> {
                         children: [
                           Column(
                             children:
-                                _myGroups.map((group) {
-                                  if (_state == 0) {
-                                    return ListTile(title: EachGroup(group));
-                                  } else {
-                                    return ListTile(
-                                      title: EachGroup(group),
-                                      trailing: IconButton(
-                                        icon: const Icon(
-                                          Icons.check_circle,
-                                          color: Colors.red,
-                                        ),
-                                        onPressed:
-                                            () => _deleteGroup(group['id']),
-                                      ),
-                                    );
-                                  }
-                                }).toList(),
+                                (_state == 1)
+                                    ? _myGroups.map((group) {
+                                      return ListTile(title: EachGroup(group));
+                                    }).toList()
+                                    : _individual.map((individual) {
+                                      return ListTile(
+                                        title: EachIndividual(individual),
+                                      );
+                                    }).toList(),
                           ),
                         ],
                       ),
@@ -369,42 +372,41 @@ class _GroupPageState extends State<GroupPage> {
           ),
 
           if (_searchController.text.isNotEmpty && _searchResults.isNotEmpty)
-  Positioned(
-    top: 60,
-    right: 16,
-    child: SizedBox(
-      width: 250,
-      height: 250,
-      child: SingleChildScrollView(
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(8),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black26,
-                blurRadius: 4,
-                offset: Offset(0, 2),
+            Positioned(
+              top: 60,
+              right: 16,
+              child: SizedBox(
+                width: 250,
+                height: 250,
+                child: SingleChildScrollView(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black26,
+                          blurRadius: 4,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: ListView(
+                      shrinkWrap: true,
+                      children:
+                          _searchResults.map((user) {
+                            return ListTile(
+                              title: Text(user['user_name']),
+                              onTap: () {
+                                _sendJoinRequest(user['id']);
+                              },
+                            );
+                          }).toList(),
+                    ),
+                  ),
+                ),
               ),
-            ],
-          ),
-          child: ListView(
-            shrinkWrap: true,
-            children: _searchResults.map((user) {
-              return ListTile(
-                title: Text(user['user_name']),
-                onTap: () {
-                  // Fixed: Properly call _sendJoinRequest 
-                  _sendJoinRequest(user['id']);
-                  // Don't pop the context here, that's handled in the dialog
-                },
-              );
-            }).toList(),
-          ),
-        ),
-      ),
-    ),
-  ),
+            ),
         ],
       ),
     );
@@ -438,5 +440,89 @@ class _GroupPageState extends State<GroupPage> {
         ),
       ),
     );
+  }
+
+  Widget EachIndividual(Map<String, dynamic> individual) {
+    String otherUserId =
+        Global.userId == individual['created_by']
+            ? individual['created_for']
+            : individual['created_by'];
+    double amount = individual['amount'] ?? 0.0;
+    DateTime date =
+        DateTime.tryParse(individual['created_at']) ?? DateTime.now();
+    Color txColor =
+        individual['transaction_type'] == 'receive' ? Colors.green : Colors.red;
+    Color bgColor =
+        individual['transaction_type'] == 'receive'
+            ? Colors.green.shade50
+            : Colors.red.shade50;
+    bool isDone = (individual['created_by'] == Global.userId);
+
+    return GestureDetector(
+      onTap: () {},
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: bgColor,
+          border: Border.all(color: txColor, width: 2),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            FutureBuilder<String>(
+              future: _getUsernameById(otherUserId),
+              builder: (context, snapshot) {
+                String displayName =
+                    snapshot.hasData ? snapshot.data! : 'Loading...';
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      displayName,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      "₹${amount.toStringAsFixed(2)}",
+                      style: TextStyle(fontSize: 14, color: txColor),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      "${date.day}/${date.month}/${date.year}",
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                  ],
+                );
+              },
+            ),
+            if (isDone)
+              IconButton(
+                icon: Icon(Icons.delete, color: txColor),
+                onPressed: () => _deleteIndividualEntry(individual),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<String> _getUsernameById(String userId) async {
+    final response =
+        await supabase
+            .from('users')
+            .select('user_name')
+            .eq('id', userId)
+            .single();
+
+    if (response != null && response['user_name'] != null) {
+      return response['user_name'];
+    } else {
+      return 'Unknown User';
+    }
   }
 }
