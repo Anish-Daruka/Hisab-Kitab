@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:hisab_kitab/group_member.dart';
 import 'package:hisab_kitab/home.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'global.dart';
+import 'group_member.dart';
 
 class GroupPage extends StatefulWidget {
   @override
@@ -25,14 +27,29 @@ class _GroupPageState extends State<GroupPage> {
   }
 
   Future<void> _fetchMyGroups() async {
+    print("fetching my groups.......");
+    final groupIdsResponse = await supabase
+        .from('group_members')
+        .select('Group_Id')
+        .eq('User_Id', Global.userId!);
+    print("here.......");
+
+    List<dynamic> groupIds =
+        groupIdsResponse.map((e) => e['Group_Id']).toList();
+    print(groupIds);
     final response = await supabase
         .from('groups')
         .select()
-        .eq('created_by', Global.userId!);
-    setState(() {
-      _myGroups =
-          (response as List).map((e) => e as Map<String, dynamic>).toList();
-    });
+        .filter('Group_Id', 'in', groupIds);
+    print("here 2........");
+    print(response);
+
+    if (response != null && response is List) {
+      setState(() {
+        _myGroups = response.map((e) => e as Map<String, dynamic>).toList();
+      });
+    }
+    print(" groups fetched........");
   }
 
   Future<void> _fetchIndividual() async {
@@ -48,7 +65,7 @@ class _GroupPageState extends State<GroupPage> {
 
   Future<void> _deleteGroup(dynamic groupId) async {
     print("deleting group.......");
-    await supabase.from('groups').delete().eq('id', groupId);
+    await supabase.from('groups').delete().eq('Group_Id', groupId);
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Group Deleted Successfully!')),
     );
@@ -73,22 +90,29 @@ class _GroupPageState extends State<GroupPage> {
   }
 
   void _createGroup() async {
+    print("creating group.......");
     if (_groupNameController.text.isNotEmpty) {
-      final response =
+      var response =
           await supabase.from('groups').insert({
-            'name': _groupNameController.text,
-            'created_by': Global.userId,
-            'created_at': DateTime.now().toIso8601String(),
+            'Group_Name': _groupNameController.text,
+            'Created_By': Global.userId,
+            'Created_At': DateTime.now().toIso8601String(),
           }).select();
 
       if (response.isNotEmpty) {
+        response =
+            await supabase.from('group_members').insert({
+              'Group_Id': response[0]['Group_Id'],
+              'User_Id': Global.userId,
+              'Joined_At': DateTime.now().toIso8601String(),
+            }).select();
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('Group Created Successfully!')));
         _groupNameController.clear();
-        _fetchMyGroups(); // Refresh groups after creation
       }
     }
+    _fetchMyGroups();
   }
 
   void _searchUsers() async {
@@ -103,12 +127,11 @@ class _GroupPageState extends State<GroupPage> {
     });
   }
 
+  // Updated _sendJoinRequest: store negative amount for "pay" and remove transaction_type
   void _sendJoinRequest(String userId) {
     print("sending join request to $userId");
-
     TextEditingController _amountController = TextEditingController();
     String _transactionType = 'pay'; // Default to 'pay'
-
     showDialog(
       context: context,
       builder:
@@ -173,16 +196,16 @@ class _GroupPageState extends State<GroupPage> {
                     TextButton(
                       onPressed: () async {
                         if (_amountController.text.isNotEmpty) {
+                          double amt = double.parse(_amountController.text);
+                          // If "pay", store as negative
+                          double storedAmount =
+                              _transactionType == 'pay' ? -amt : amt;
                           await supabase.from('individual').insert({
                             'created_for': userId,
                             'created_by': Global.userId,
-                            'amount': double.parse(_amountController.text),
-                            'transaction_type': _transactionType,
+                            'amount': storedAmount,
                             'created_at': DateTime.now().toIso8601String(),
                           });
-                          _fetchIndividual();
-                          _amountController.clear();
-                          _transactionType = 'pay';
                           _searchController.clear();
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(content: Text('Join request sent!')),
@@ -417,7 +440,13 @@ class _GroupPageState extends State<GroupPage> {
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => Home()),
+          MaterialPageRoute(
+            builder:
+                (context) => GroupMemberPage(
+                  groupId: group['Group_Id'],
+                  groupName: group['Group_Name'],
+                ),
+          ),
         );
       },
       child: Container(
@@ -429,37 +458,49 @@ class _GroupPageState extends State<GroupPage> {
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Icon(Icons.group, color: Colors.blue),
-            SizedBox(width: 8),
-            Text(
-              group['name'],
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            Row(
+              children: [
+                Icon(Icons.group, color: Colors.blue),
+                SizedBox(width: 8),
+                Text(
+                  group['Group_Name'],
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ],
             ),
+            if (Global.userId == group['Created_By'])
+              IconButton(
+                icon: Icon(Icons.done, color: Colors.green),
+                onPressed: () => _deleteGroup(group['Group_Id']),
+              ),
           ],
         ),
       ),
     );
   }
 
+  // Updated EachIndividual: derive colors from the amount and remove transaction_type references.
   Widget EachIndividual(Map<String, dynamic> individual) {
     String otherUserId =
         Global.userId == individual['created_by']
             ? individual['created_for']
             : individual['created_by'];
+    bool isDone = (individual['created_by'] == Global.userId);
     double amount = individual['amount'] ?? 0.0;
     DateTime date =
         DateTime.tryParse(individual['created_at']) ?? DateTime.now();
-    Color txColor =
-        individual['transaction_type'] == 'receive' ? Colors.green : Colors.red;
+    // Use the sign of the amount: negative -> pay/request (red), positive -> receive (green)
+    Color txColor = (amount < 0) ^ isDone ? Colors.red : Colors.green;
     Color bgColor =
-        individual['transaction_type'] == 'receive'
-            ? Colors.green.shade50
-            : Colors.red.shade50;
-    bool isDone = (individual['created_by'] == Global.userId);
+        (amount < 0) ^ isDone ? Colors.red.shade50 : Colors.green.shade50;
+    // isDone flag remains the same
 
     return GestureDetector(
-      onTap: () {},
+      onTap: () {
+        // Define tap behavior if needed.
+      },
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
         padding: const EdgeInsets.all(12),
@@ -488,7 +529,7 @@ class _GroupPageState extends State<GroupPage> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      "₹${amount.toStringAsFixed(2)}",
+                      "₹${amount.abs().toStringAsFixed(2)}", // show magnitude only
                       style: TextStyle(fontSize: 14, color: txColor),
                     ),
                     const SizedBox(height: 4),
