@@ -100,12 +100,20 @@ class _GroupPageState extends State<GroupPage> {
           }).select();
 
       if (response.isNotEmpty) {
-        response =
-            await supabase.from('group_members').insert({
-              'Group_Id': response[0]['Group_Id'],
-              'User_Id': Global.userId,
-              'Joined_At': DateTime.now().toIso8601String(),
-            }).select();
+        var groupId = response[0]['Group_Id'];
+        await supabase.from('group_members').insert({
+          'Group_Id': groupId,
+          'User_Id': Global.userId,
+          'Joined_At': DateTime.now().toIso8601String(),
+        }).select();
+        // Insert notification: e.g., "username -> created group {group_name}"
+        String uname = await _getUsernameById(Global.userId!);
+        await supabase.from('notification').insert({
+          'Group_Id': groupId,
+          'Notifications': [
+            '$uname -> created group ${_groupNameController.text}',
+          ],
+        });
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('Group Created Successfully!')));
@@ -252,6 +260,7 @@ class _GroupPageState extends State<GroupPage> {
           );
         },
         child: Icon(Icons.add),
+        backgroundColor: Colors.blue,
       ),
       body: Stack(
         children: [
@@ -273,12 +282,6 @@ class _GroupPageState extends State<GroupPage> {
                           height: 40,
                           child: TextButton(
                             style: TextButton.styleFrom(
-                              foregroundColor: const Color.fromARGB(
-                                255,
-                                1,
-                                12,
-                                22,
-                              ),
                               backgroundColor:
                                   _state == 1 ? Colors.blueAccent : Colors.grey,
                               shape: RoundedRectangleBorder(
@@ -304,12 +307,6 @@ class _GroupPageState extends State<GroupPage> {
                           height: 40,
                           child: TextButton(
                             style: TextButton.styleFrom(
-                              foregroundColor: const Color.fromARGB(
-                                255,
-                                1,
-                                12,
-                                22,
-                              ),
                               backgroundColor:
                                   _state == 0 ? Colors.blueAccent : Colors.grey,
                               shape: RoundedRectangleBorder(

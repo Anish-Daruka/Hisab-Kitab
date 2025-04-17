@@ -21,11 +21,9 @@ class _CreateAccountState extends State<CreateAccount> {
             .select()
             .eq('user_name', _usernameController.text)
             .maybeSingle();
-
     setState(() {
       _isUsernameTaken = response != null;
     });
-
     if (_isUsernameTaken) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -52,12 +50,11 @@ class _CreateAccountState extends State<CreateAccount> {
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(builder: (context) => const SignInPage()),
     );
-
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text(
           'Account created successfully!',
-          style: TextStyle(color: Colors.red),
+          style: TextStyle(color: Colors.green),
         ),
       ),
     );
@@ -65,42 +62,32 @@ class _CreateAccountState extends State<CreateAccount> {
 
   @override
   Widget build(BuildContext context) {
-    return Navigator(
-      onGenerateRoute: (RouteSettings settings) {
-        return MaterialPageRoute(
-          builder:
-              (context) => Scaffold(
-                body: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text(
-                        'Welcome',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      TextField(
-                        controller: _usernameController,
-                        decoration: const InputDecoration(
-                          labelText: 'Username',
-                          border: OutlineInputBorder(),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      ElevatedButton(
-                        onPressed: _checkUsername,
-                        child: const Text('Create Account'),
-                      ),
-                    ],
-                  ),
-                ),
+    return Scaffold(
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text(
+              'Welcome',
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 20),
+            TextField(
+              controller: _usernameController,
+              decoration: const InputDecoration(
+                labelText: 'Username',
+                border: OutlineInputBorder(),
               ),
-        );
-      },
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: _checkUsername,
+              child: const Text('Create Account'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

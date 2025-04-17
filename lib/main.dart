@@ -6,15 +6,20 @@ import 'home.dart';
 import 'transaction.dart';
 import 'NewUser.dart';
 import 'global.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  try {
+    await dotenv.load(fileName: ".env");
+  } catch (e) {
+    print("Error loading .env file: $e");
+  }
 
-  await Supabase.initialize(
-    url: 'https://etvsmzocqgxctjtpzjlu.supabase.co',
-    anonKey:
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV0dnNtem9jcWd4Y3RqdHB6amx1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE0Mzk5MDEsImV4cCI6MjA1NzAxNTkwMX0.kqVYtMpJxmbfZEk6FQnd9Wv2TUWmU8b4nMHWsmxkPYU',
-  );
+  WidgetsFlutterBinding.ensureInitialized();
+  final supabaseUrl = dotenv.env['SUPABASE_URL']!;
+  final supabaseKey = dotenv.env['SUPABASE_ANON_KEY']!;
+
+  await Supabase.initialize(url: supabaseUrl, anonKey: supabaseKey);
   print(Supabase.instance.client.auth); // added print statement
   runApp(
     ChangeNotifierProvider(
@@ -30,12 +35,37 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Google Sign In Demo',
+      title: 'Expense Map',
       theme: ThemeData(
         primarySwatch: Colors.blue,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
+        scaffoldBackgroundColor: Colors.white,
+        appBarTheme: const AppBarTheme(
+          color: Colors.blue,
+          elevation: 4,
+          centerTitle: true,
+          titleTextStyle: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.blue,
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        ),
+        textButtonTheme: TextButtonThemeData(
+          style: TextButton.styleFrom(
+            foregroundColor: Colors.blue,
+            textStyle: const TextStyle(fontSize: 16),
+          ),
+        ),
       ),
-      home: SignInPage(),
+      home: const SignInPage(),
     );
   }
 }
