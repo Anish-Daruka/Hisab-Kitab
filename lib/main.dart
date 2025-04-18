@@ -6,18 +6,12 @@ import 'home.dart';
 import 'transaction.dart';
 import 'NewUser.dart';
 import 'global.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'secret.dart';
 
 void main() async {
-  try {
-    await dotenv.load(fileName: ".env");
-  } catch (e) {
-    print("Error loading .env file: $e");
-  }
-
   WidgetsFlutterBinding.ensureInitialized();
-  final supabaseUrl = dotenv.env['SUPABASE_URL']!;
-  final supabaseKey = dotenv.env['SUPABASE_ANON_KEY']!;
+  final supabaseUrl = Secret.SUPABASE_URL;
+  final supabaseKey = Secret.SUPABASE_ANON_KEY;
 
   await Supabase.initialize(url: supabaseUrl, anonKey: supabaseKey);
   print(Supabase.instance.client.auth); // added print statement

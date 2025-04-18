@@ -17,32 +17,59 @@ class GroupMemberPage extends StatefulWidget {
   State<GroupMemberPage> createState() => _GroupMemberPageState();
 }
 
-class _GroupMemberPageState extends State<GroupMemberPage> {
+class GroupMember extends ChangeNotifier {
+  void setLoading() {
+    notifyListeners();
+  }
+}
+
+class _GroupMemberPageState extends State<GroupMemberPage> with ChangeNotifier {
   var user_largest_share = "";
+  var displayed_userid = "";
   final SupabaseClient supabase = Supabase.instance.client;
   List<Map<String, dynamic>> _groupMembers = [];
   String? _selectedUserId;
   Map<String, dynamic>? _selectedMemberDetails;
-  List<String> _notifications = []; // Simulated notifications
-  Map<String, double>? _differences;
-  double _share = 0.0;
+  Map<String, String>? getUserNamebyId = {};
+  List<String> _notifications = [];
+  Map<String, Map<String, double>> transactions = {};
+  int l = 0;
 
   @override
   void initState() {
     super.initState();
     fetchGroupMembers();
     fetchNotifications();
+    calculate();
   }
 
+  //fetches all group members
   Future<void> fetchGroupMembers() async {
     final response = await supabase
         .from('group_members')
         .select()
         .eq('Group_Id', widget.groupId);
-    setState(() {
-      _groupMembers =
-          (response as List).map((e) => e as Map<String, dynamic>).toList();
-    });
+    _groupMembers =
+        (response as List).map((e) => e as Map<String, dynamic>).toList();
+    if (l == _groupMembers.length) {
+      return;
+    }
+    for (var member in _groupMembers) {
+      String userId = member['User_Id'];
+      if (getUserNamebyId![userId] != null) {
+        continue;
+      }
+      String username = await _getUsernameById(userId);
+      getUserNamebyId![userId] = username;
+    }
+
+    print("getUserNamebyId: $getUserNamebyId");
+
+    if (_selectedMemberDetails != null) {
+      _onUserSelected(_selectedMemberDetails!['User_Id']);
+    } else {
+      calculate();
+    }
   }
 
   // Simulate fetching notifications about new member additions and amounts added
@@ -92,56 +119,6 @@ class _GroupMemberPageState extends State<GroupMemberPage> {
   }
 
   // Modified calculate() using 'Amount' and 'User_Id'
-  void calculate() {
-    Map<String, double> amounts = {};
-    double total = 0.0;
-    double max = 0.0;
-    for (var member in _groupMembers) {
-      double amt =
-          member['Amount'] != null
-              ? double.parse(member['Amount'].toString())
-              : 0.0;
-      amounts[member['User_Id']] = amt;
-      if (amt > max) {
-        max = amt;
-        user_largest_share = member['User_Id'];
-      }
-      total += amt;
-    }
-    if (amounts.isEmpty) return;
-    double share = total / amounts.length;
-    Map<String, double> differencesMap = {};
-    amounts.forEach((key, value) {
-      differencesMap[key] = value - share;
-    });
-    setState(() {
-      _share = share;
-      _differences = differencesMap;
-    });
-    print("Share per member: $share");
-    print("Differences: $_differences");
-  }
-
-  // Updated _onUserSelected: fetch details then call calculate()
-  void _onUserSelected(String? userId) async {
-    setState(() {
-      _selectedUserId = userId;
-      _selectedMemberDetails = null;
-    });
-    if (userId != null) {
-      final response =
-          await supabase
-              .from('group_members')
-              .select()
-              .eq('Group_Id', widget.groupId)
-              .eq('User_Id', userId)
-              .maybeSingle();
-      setState(() {
-        _selectedMemberDetails = response as Map<String, dynamic>?;
-      });
-    }
-    calculate();
-  }
 
   void _showAddOptions() {
     showDialog(
@@ -193,33 +170,42 @@ class _GroupMemberPageState extends State<GroupMemberPage> {
                   decoration: const InputDecoration(labelText: "Amount"),
                 ),
                 const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Expanded(
-                      child: RadioListTile<String>(
-                        title: const Text("Paid"),
-                        value: "Paid",
-                        groupValue: _transactionType,
-                        onChanged: (value) {
-                          setState(() {
-                            _transactionType = value!;
-                          });
-                        },
-                      ),
-                    ),
-                    Expanded(
-                      child: RadioListTile<String>(
-                        title: const Text("Received"),
-                        value: "Received",
-                        groupValue: _transactionType,
-                        onChanged: (value) {
-                          setState(() {
-                            _transactionType = value!;
-                          });
-                        },
-                      ),
-                    ),
-                  ],
+                StatefulBuilder(
+                  builder: (context, setState) {
+                    return Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        ElevatedButton(
+                          onPressed: () {
+                            setState(() {
+                              _transactionType = "Paid";
+                            });
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor:
+                                _transactionType == "Paid"
+                                    ? Colors.blue
+                                    : Colors.grey,
+                          ),
+                          child: const Text("Paid"),
+                        ),
+                        ElevatedButton(
+                          onPressed: () {
+                            setState(() {
+                              _transactionType = "Received";
+                            });
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor:
+                                _transactionType == "Received"
+                                    ? Colors.blue
+                                    : Colors.grey,
+                          ),
+                          child: const Text("Received"),
+                        ),
+                      ],
+                    );
+                  },
                 ),
               ],
             ),
@@ -235,17 +221,28 @@ class _GroupMemberPageState extends State<GroupMemberPage> {
                     if (_transactionType == "Received") {
                       amount = -amount; // Make amount negative if "Received"
                     }
+                    print("Adding amount.........");
                     // Insert amount addition record. Adjust table & fields as needed.
+                    // Step 1: Get current value
+                    final response =
+                        await supabase
+                            .from('group_members')
+                            .select('Amount')
+                            .eq('Group_Id', widget.groupId)
+                            .eq('User_Id', Global.userId!)
+                            .single();
+
+                    final currentAmount = response['Amount'] ?? 0;
+
+                    // Step 2: Update with incremented value
                     await supabase
                         .from('group_members')
-                        .update({
-                          'Amount':
-                              amount + (_selectedMemberDetails?['Amount'] ?? 0),
-                        })
+                        .update({'Amount': currentAmount + amount})
                         .eq('Group_Id', widget.groupId)
                         .eq('User_Id', Global.userId!);
+
                     Navigator.pop(context);
-                    calculate();
+                    fetchGroupMembers();
                     String uname = await _getUsernameById(Global.userId!);
                     String note =
                         _transactionType == "Paid"
@@ -321,39 +318,105 @@ class _GroupMemberPageState extends State<GroupMemberPage> {
     );
   }
 
+  // Updated _onUserSelected: fetch details then call calculate()
+  void _onUserSelected(String? userId) async {
+    _selectedUserId = userId;
+    _selectedMemberDetails = null;
+    if (userId != null) {
+      final response =
+          await supabase
+              .from('group_members')
+              .select()
+              .eq('Group_Id', widget.groupId)
+              .eq('User_Id', userId)
+              .maybeSingle();
+      _selectedMemberDetails = response as Map<String, dynamic>?;
+    }
+    calculate();
+  }
+
+  void calculate() {
+    print("Calculating transactions...");
+    transactions = {};
+    Map<String, double> amounts = {};
+    double total = 0.0;
+    double max = 0.0;
+    for (var member in _groupMembers) {
+      double amt =
+          member['Amount'] != null
+              ? double.parse(member['Amount'].toString())
+              : 0.0;
+      amounts[member['User_Id']] = amt;
+      if (amt > max) {
+        max = amt;
+        user_largest_share = member['User_Id'];
+      }
+      total += amt;
+    }
+    if (amounts.isEmpty) return;
+    double share = total / amounts.length;
+    for (var member in _groupMembers) {
+      if (member['User_Id'] == user_largest_share) {
+        amounts.forEach((key, value) {
+          if (value - share != 0 && key.isNotEmpty) {
+            if (key != user_largest_share && value != share) {
+              transactions.putIfAbsent(member['User_Id'], () => {});
+              transactions[member['User_Id']]![key] = share - value;
+            }
+          }
+        });
+      } else {
+        if (amounts[member['User_Id']] == share) continue;
+        if (user_largest_share.isNotEmpty) {
+          transactions.putIfAbsent(member['User_Id'], () => {});
+          transactions[member['User_Id']]![user_largest_share] =
+              (amounts[member['User_Id']] ?? 0.0) - share;
+        }
+      }
+    }
+    print("transactions: $transactions");
+    print("Notifying listeners...");
+    setState(() {});
+    notifyListeners();
+  }
+
   // Updated EachUserDetails: simply show the selected member's details as in group.dart EachIndividual
   Widget EachUserDetails() {
-    Map<String, double> eachtransaction = {};
-    if (_selectedUserId == user_largest_share) {
-      eachtransaction = _differences ?? {};
-    } else {
-      double value = 0.0;
-      if (_selectedMemberDetails != null &&
-          _selectedMemberDetails![_selectedUserId] != null) {
-        value =
-            double.tryParse(
-              _selectedMemberDetails![_selectedUserId].toString(),
-            ) ??
-            0.0;
-      }
-      eachtransaction[user_largest_share] = -1 * value;
+    addListener(() {
+      setState(() {});
+    });
+    print("rebuilding widget....");
+    if (_selectedUserId == null) {
+      return const SizedBox();
     }
-    return Container(
-      child: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children:
-              eachtransaction.entries.map((entry) {
-                return ListTile(
-                  title: EachUser({
-                    'User_Id': entry.key,
-                    'Amount': entry.value,
-                  }),
-                );
-              }).toList(),
+    Map<String, double> eachtransaction = transactions[_selectedUserId] ?? {};
+    print("eachtransaction: $eachtransaction");
+
+    if (eachtransaction.isEmpty) {
+      return const Center(
+        child: Text(
+          "No pending settlements",
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
-      ),
-    );
+      );
+    } else {
+      return Container(
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children:
+                eachtransaction.entries.map((entry) {
+                  return ListTile(
+                    title: EachUser({
+                      'User_Id': entry.key,
+                      'Amount': entry.value,
+                    }),
+                  );
+                }).toList(),
+          ),
+        ),
+      );
+    }
   }
 
   // Updated EachIndividual: corrected datatypes and field names.
@@ -363,12 +426,10 @@ class _GroupMemberPageState extends State<GroupMemberPage> {
         transac['Amount'] != null
             ? double.parse(transac['Amount'].toString())
             : 0.0;
+    print(amount);
     Color txColor = amount < 0 ? Colors.red : Colors.green;
     String note = "";
     return GestureDetector(
-      onTap: () {
-        // Define tap behavior if needed.
-      },
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
         padding: const EdgeInsets.all(12),
@@ -379,11 +440,11 @@ class _GroupMemberPageState extends State<GroupMemberPage> {
         ),
         child: Row(
           children: [
-            FutureBuilder<String>(
-              future: _getUsernameById(userId),
-              builder: (context, snapshot) {
-                String displayName =
-                    snapshot.hasData ? snapshot.data! : 'Loading...';
+            Builder(
+              builder: (context) {
+                print(getUserNamebyId);
+                print(userId);
+                String displayName = getUserNamebyId?[userId] ?? 'Unknown';
                 note =
                     amount < 0
                         ? "$displayName -> has paid ${amount.abs().toStringAsFixed(0)}"
@@ -406,9 +467,7 @@ class _GroupMemberPageState extends State<GroupMemberPage> {
               icon: const Icon(Icons.done, color: Colors.blue),
               onPressed: () {
                 _markNotificationDone(note);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Notification marked as done.')),
-                );
+                _done(transac, amount);
               },
             ),
           ],
@@ -479,7 +538,7 @@ class _GroupMemberPageState extends State<GroupMemberPage> {
                         ),
                       );
                     }).toList(),
-                onChanged: _onUserSelected,
+                onChanged: (value) => _onUserSelected(value),
               ),
             ),
           ),
@@ -548,5 +607,78 @@ class _GroupMemberPageState extends State<GroupMemberPage> {
           .eq('Group_Id', widget.groupId);
     }
     fetchNotifications();
+  }
+
+  // Add _done function to process a completed transaction.
+  Future<void> _done(Map<String, dynamic> transac, double amount) async {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text("Confirm Transaction"),
+            content: const Text(
+              "Are you sure you want to mark this transaction as done?",
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text("Cancel"),
+              ),
+              TextButton(
+                onPressed: () async {
+                  Navigator.pop(context);
+                  // Proceed with marking the transaction as done
+                  String userId = transac['User_Id'];
+                  double userIdamount = await getAmountByUserId(userId);
+                  // Add amount to the current user['Amount'] and subtract from the selected user['Amount']
+                  await supabase
+                      .from('group_members')
+                      .update({'Amount': amount + userIdamount})
+                      .eq('Group_Id', widget.groupId)
+                      .eq('User_Id', userId);
+                  await supabase
+                      .from('group_members')
+                      .update({
+                        'Amount':
+                            (_selectedMemberDetails?['Amount'] ?? 0) - amount,
+                      })
+                      .eq('Group_Id', widget.groupId)
+                      .eq('User_Id', _selectedUserId!);
+                  fetchGroupMembers();
+                  String payer, receiver;
+                  // Mark notification in desired format:
+                  if (amount < 0) {
+                    receiver = getUserNamebyId?[_selectedUserId!] ?? 'Unknown';
+                    payer = getUserNamebyId?[userId] ?? 'Unknown';
+                  } else {
+                    payer = getUserNamebyId?[_selectedUserId!] ?? 'Unknown';
+                    receiver = getUserNamebyId?[userId] ?? 'Unknown';
+                  }
+                  String notificationMessage =
+                      "${getUserNamebyId?[_selectedUserId!] ?? 'Unknown'} -> $payer paid ${amount.abs().toStringAsFixed(0)} to $receiver";
+                  await _appendNotification(notificationMessage);
+                },
+                child: const Text("Confirm"),
+              ),
+            ],
+          ),
+    );
+    // Example implementation: mark the transaction as done locally and update backend if needed.
+  }
+
+  Future<double> getAmountByUserId(String userId) async {
+    final response =
+        await supabase
+            .from('group_members')
+            .select('Amount')
+            .eq('Group_Id', widget.groupId)
+            .eq('User_Id', userId)
+            .maybeSingle();
+
+    if (response != null && response['Amount'] != null) {
+      return double.parse(response['Amount'].toString());
+    } else {
+      return 0.0;
+    }
   }
 }

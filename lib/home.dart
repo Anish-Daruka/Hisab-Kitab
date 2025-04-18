@@ -23,7 +23,7 @@ class _HomeState extends State<Home> {
     final user = supabase.auth.currentUser;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Hisab-Kitab'),
+        title: const Text('ExpenseMap'),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
