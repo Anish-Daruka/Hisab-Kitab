@@ -64,29 +64,65 @@ class _GroupPageState extends State<GroupPage> {
   }
 
   Future<void> _deleteGroup(dynamic groupId) async {
-    print("deleting group.......");
-    await supabase.from('groups').delete().eq('Group_Id', groupId);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Group Deleted Successfully!')),
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Confirm"),
+          content: const Text(
+            "Are you sure all transactions of this group has been completed?",
+          ),
+          actions: [
+            TextButton(
+              child: const Text("Cancel"),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: const Text("Delete"),
+              onPressed: () async {
+                Navigator.of(context).pop();
+                print("deleting group.......");
+                await supabase.from('groups').delete().eq('Group_Id', groupId);
+                _fetchMyGroups();
+              },
+            ),
+          ],
+        );
+      },
     );
-    _fetchMyGroups();
-  }
-
-  Future<void> _deleteIndividual(dynamic individualId) async {
-    print("deleting individual......");
-    await supabase.from('groups').delete().eq('id', individualId);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Group Deleted Successfully!')),
-    );
-    _fetchIndividual();
   }
 
   void _deleteIndividualEntry(Map<String, dynamic> individual) async {
-    await supabase.from('individual').delete().eq('id', individual['id']);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Individual entry deleted successfully!')),
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Confirm"),
+          content: const Text("Are you sure the transaction is completed?"),
+          actions: [
+            TextButton(
+              child: const Text("Cancel"),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: const Text("Delete"),
+              onPressed: () async {
+                Navigator.of(context).pop();
+                await supabase
+                    .from('individual')
+                    .delete()
+                    .eq('id', individual['id']);
+                _fetchIndividual();
+              },
+            ),
+          ],
+        );
+      },
     );
-    _fetchIndividual();
   }
 
   void _createGroup() async {
@@ -114,9 +150,7 @@ class _GroupPageState extends State<GroupPage> {
             '$uname -> created group ${_groupNameController.text}',
           ],
         });
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Group Created Successfully!')));
+
         _groupNameController.clear();
       }
     }
@@ -155,41 +189,41 @@ class _GroupPageState extends State<GroupPage> {
                         keyboardType: TextInputType.number,
                         decoration: const InputDecoration(labelText: 'Amount'),
                       ),
+                      SizedBox(height: 20),
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          TextButton(
-                            onPressed: () {
+                          ChoiceChip(
+                            label: const Text('Pay'),
+                            selected: _transactionType == 'pay',
+                            selectedColor: AppColor.moredarkercolor,
+                            onSelected: (selected) {
                               setState(() {
                                 _transactionType = 'pay';
                               });
                             },
-                            style: TextButton.styleFrom(
-                              backgroundColor:
+                            labelStyle: TextStyle(
+                              color:
                                   _transactionType == 'pay'
-                                      ? Colors.blueAccent
-                                      : Colors.grey,
-                            ),
-                            child: const Text(
-                              'Pay',
-                              style: TextStyle(color: Colors.white),
+                                      ? Colors.white
+                                      : Colors.black,
                             ),
                           ),
-                          TextButton(
-                            onPressed: () {
+                          const SizedBox(width: 16),
+                          ChoiceChip(
+                            label: const Text('Receive'),
+                            selected: _transactionType == 'receive',
+                            selectedColor: AppColor.moredarkercolor,
+                            onSelected: (selected) {
                               setState(() {
                                 _transactionType = 'receive';
                               });
                             },
-                            style: TextButton.styleFrom(
-                              backgroundColor:
+                            labelStyle: TextStyle(
+                              color:
                                   _transactionType == 'receive'
-                                      ? Colors.blueAccent
-                                      : Colors.grey,
-                            ),
-                            child: const Text(
-                              'Receive',
-                              style: TextStyle(color: Colors.white),
+                                      ? Colors.white
+                                      : Colors.black,
                             ),
                           ),
                         ],
@@ -207,7 +241,8 @@ class _GroupPageState extends State<GroupPage> {
                           double amt = double.parse(_amountController.text);
                           // If "pay", store as negative
                           double storedAmount =
-                              _transactionType == 'pay' ? -amt : amt;
+                              _transactionType == 'pay' ? amt : -amt;
+                          print("Adding individual entry.............");
                           await supabase.from('individual').insert({
                             'created_for': userId,
                             'created_by': Global.userId,
@@ -215,9 +250,7 @@ class _GroupPageState extends State<GroupPage> {
                             'created_at': DateTime.now().toIso8601String(),
                           });
                           _searchController.clear();
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Join request sent!')),
-                          );
+                          _fetchIndividual();
                           Navigator.pop(context);
                         }
                       },
@@ -231,203 +264,225 @@ class _GroupPageState extends State<GroupPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          showDialog(
-            context: context,
-            builder:
-                (context) => AlertDialog(
-                  title: Text('Create Group'),
-                  content: TextField(
-                    controller: _groupNameController,
-                    decoration: InputDecoration(labelText: 'Group Name'),
+    return Container(
+      color: AppColor.backgroundcolor,
+      child: Scaffold(
+        floatingActionButton: FloatingActionButton(
+          onPressed: () {
+            showDialog(
+              context: context,
+              builder:
+                  (context) => AlertDialog(
+                    title: Text('Create Group'),
+                    content: TextField(
+                      controller: _groupNameController,
+                      decoration: InputDecoration(labelText: 'Group Name'),
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: Text('Cancel'),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          _createGroup();
+                          Navigator.pop(context);
+                        },
+                        child: Text('Create'),
+                      ),
+                    ],
                   ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: Text('Cancel'),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        _createGroup();
-                        Navigator.pop(context);
-                      },
-                      child: Text('Create'),
-                    ),
-                  ],
-                ),
-          );
-        },
-        child: Icon(Icons.add),
-        backgroundColor: Colors.blue,
-      ),
-      body: Stack(
-        children: [
-          Positioned(
-            top: 70,
-            child: SizedBox(
-              height: MediaQuery.of(context).size.height,
-              width: MediaQuery.of(context).size.width,
-              child: Column(
-                children: [
-                  Positioned(
-                    top: 16,
-                    left: 16,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        SizedBox(
-                          width: 100,
-                          height: 40,
-                          child: TextButton(
-                            style: TextButton.styleFrom(
-                              backgroundColor:
-                                  _state == 1 ? Colors.blueAccent : Colors.grey,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8.0),
-                              ),
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _state = 1;
-                                _searchController.clear();
-                                _searchResults = [];
-                              });
-                            },
-                            child: const Text(
-                              'Groups',
-                              style: TextStyle(color: Colors.white),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        SizedBox(
-                          width: 100,
-                          height: 40,
-                          child: TextButton(
-                            style: TextButton.styleFrom(
-                              backgroundColor:
-                                  _state == 0 ? Colors.blueAccent : Colors.grey,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8.0),
-                              ),
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _state = 0;
-                                _searchController.clear();
-                                _searchResults = [];
-                              });
-                            },
-                            child: const Text(
-                              'Individual',
-                              style: TextStyle(color: Colors.white),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    child: SingleChildScrollView(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+            );
+          },
+          child: Icon(Icons.add),
+        ),
+        body: Stack(
+          children: [
+            Container(color: AppColor.backgroundcolor),
+            Positioned(
+              top: 90,
+              child: SizedBox(
+                height: MediaQuery.of(context).size.height,
+                width: MediaQuery.of(context).size.width,
+                child: Column(
+                  children: [
+                    Positioned(
+                      top: 16,
+                      left: 16,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Column(
-                            children:
-                                (_state == 1)
-                                    ? _myGroups.map((group) {
-                                      return ListTile(title: EachGroup(group));
-                                    }).toList()
-                                    : _individual.map((individual) {
-                                      return ListTile(
-                                        title: EachIndividual(individual),
-                                      );
-                                    }).toList(),
+                          SizedBox(
+                            width: 100,
+                            height: 40,
+                            child: TextButton(
+                              style: TextButton.styleFrom(
+                                backgroundColor:
+                                    _state == 1
+                                        ? AppColor.moredarkercolor
+                                        : Colors.grey,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8.0),
+                                ),
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _state = 1;
+                                  _searchController.clear();
+                                  _searchResults = [];
+                                });
+                              },
+                              child: const Text(
+                                'Groups',
+                                style: TextStyle(color: Colors.white),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 26),
+                          SizedBox(
+                            width: 100,
+                            height: 40,
+                            child: TextButton(
+                              style: TextButton.styleFrom(
+                                backgroundColor:
+                                    _state == 0
+                                        ? AppColor.moredarkercolor
+                                        : Colors.grey,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8.0),
+                                ),
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _state = 0;
+                                  _searchController.clear();
+                                  _searchResults = [];
+                                });
+                              },
+                              child: const Text(
+                                'Individual',
+                                style: TextStyle(color: Colors.white),
+                              ),
+                            ),
                           ),
                         ],
                       ),
                     ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          Positioned(
-            top: 16,
-            right: 16,
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black26,
-                    blurRadius: 4,
-                    offset: Offset(0, 2),
-                  ),
-                ],
-              ),
-              height: 40,
-              width: 370,
-              child: TextField(
-                controller: _searchController,
-                decoration: InputDecoration(
-                  hintText: 'Search user by username',
-                  hintStyle: TextStyle(fontSize: 15, color: Colors.grey),
-                  suffixIcon: IconButton(
-                    icon: Icon(Icons.search),
-                    onPressed: _searchUsers,
-                  ),
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(horizontal: 8),
-                ),
-                onChanged: (val) {
-                  _searchUsers();
-                },
-              ),
-            ),
-          ),
-
-          if (_searchController.text.isNotEmpty && _searchResults.isNotEmpty)
-            Positioned(
-              top: 60,
-              right: 16,
-              child: SizedBox(
-                width: 250,
-                height: 250,
-                child: SingleChildScrollView(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(8),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black26,
-                          blurRadius: 4,
-                          offset: Offset(0, 2),
+                    const SizedBox(height: 16),
+                    Container(
+                      child: SingleChildScrollView(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Column(
+                              children:
+                                  (_state == 1)
+                                      ? _myGroups.isEmpty
+                                          ? [
+                                            const SizedBox(height: 10),
+                                            Text('No groups available'),
+                                          ]
+                                          : _myGroups.map((group) {
+                                            return ListTile(
+                                              title: EachGroup(group),
+                                            );
+                                          }).toList()
+                                      : _individual.isEmpty
+                                      ? [
+                                        const SizedBox(height: 10),
+                                        Text('No pending settlements'),
+                                      ]
+                                      : _individual.map((individual) {
+                                        return ListTile(
+                                          title: EachIndividual(individual),
+                                        );
+                                      }).toList(),
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
-                    child: ListView(
-                      shrinkWrap: true,
-                      children:
-                          _searchResults.map((user) {
-                            return ListTile(
-                              title: Text(user['user_name']),
-                              onTap: () {
-                                _sendJoinRequest(user['id']);
-                              },
-                            );
-                          }).toList(),
+                  ],
+                ),
+              ),
+            ),
+
+            Positioned(
+              top: 16,
+              right: 8,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                height: 40,
+                width: 370,
+                child: TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    hintText: 'Search user by username',
+                    hintStyle: TextStyle(fontSize: 15, color: Colors.grey),
+                    suffixIcon: IconButton(
+                      icon: Icon(Icons.search),
+                      onPressed: _searchUsers,
+                    ),
+                    filled: true,
+                    fillColor: const Color.fromARGB(255, 251, 251, 251),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide.none,
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide.none,
+                    ),
+                    contentPadding: EdgeInsets.symmetric(horizontal: 8),
+                  ),
+                  onChanged: (val) {
+                    _searchUsers();
+                  },
+                ),
+              ),
+            ),
+
+            if (_searchController.text.isNotEmpty && _searchResults.isNotEmpty)
+              Positioned(
+                top: 60,
+                right: 16,
+                child: SizedBox(
+                  width: 250,
+                  height: 250,
+                  child: SingleChildScrollView(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black26,
+                            blurRadius: 4,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: ListView(
+                        shrinkWrap: true,
+                        children:
+                            _searchResults.map((user) {
+                              return ListTile(
+                                title: Text(user['user_name']),
+                                onTap: () {
+                                  _sendJoinRequest(user['id']);
+                                },
+                              );
+                            }).toList(),
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -450,8 +505,8 @@ class _GroupPageState extends State<GroupPage> {
         margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.blue.shade50,
-          border: Border.all(color: Colors.blue, width: 1),
+          color: AppColor.darkercolor,
+          border: Border.all(color: AppColor.moredarkercolor, width: 1),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
@@ -459,7 +514,7 @@ class _GroupPageState extends State<GroupPage> {
           children: [
             Row(
               children: [
-                Icon(Icons.group, color: Colors.blue),
+                Icon(Icons.group, color: AppColor.moredarkercolor),
                 SizedBox(width: 8),
                 Text(
                   group['Group_Name'],
@@ -469,7 +524,7 @@ class _GroupPageState extends State<GroupPage> {
             ),
             if (Global.userId == group['Created_By'])
               IconButton(
-                icon: Icon(Icons.done, color: Colors.green),
+                icon: Icon(Icons.delete, color: AppColor.darkestcolor),
                 onPressed: () => _deleteGroup(group['Group_Id']),
               ),
           ],
@@ -488,62 +543,66 @@ class _GroupPageState extends State<GroupPage> {
     double amount = individual['amount'] ?? 0.0;
     DateTime date =
         DateTime.tryParse(individual['created_at']) ?? DateTime.now();
-    // Use the sign of the amount: negative -> pay/request (red), positive -> receive (green)
+
+    // Determine color based on amount and context
     Color txColor = (amount < 0) ^ isDone ? Colors.red : Colors.green;
-    Color bgColor =
-        (amount < 0) ^ isDone ? Colors.red.shade50 : Colors.green.shade50;
-    // isDone flag remains the same
 
     return GestureDetector(
       onTap: () {
         // Define tap behavior if needed.
       },
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: bgColor,
-          border: Border.all(color: txColor, width: 2),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            FutureBuilder<String>(
-              future: _getUsernameById(otherUserId),
-              builder: (context, snapshot) {
-                String displayName =
-                    snapshot.hasData ? snapshot.data! : 'Loading...';
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      displayName,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+      child: Card(
+        color: AppColor.lightercolor,
+        margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              FutureBuilder<String>(
+                future: _getUsernameById(otherUserId),
+                builder: (context, snapshot) {
+                  String displayName =
+                      snapshot.hasData ? snapshot.data! : 'Loading...';
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        displayName,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      "₹${amount.abs().toStringAsFixed(2)}", // show magnitude only
-                      style: TextStyle(fontSize: 14, color: txColor),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      "${date.day}/${date.month}/${date.year}",
-                      style: const TextStyle(fontSize: 12, color: Colors.grey),
-                    ),
-                  ],
-                );
-              },
-            ),
-            if (isDone)
-              IconButton(
-                icon: Icon(Icons.delete, color: txColor),
-                onPressed: () => _deleteIndividualEntry(individual),
+                      const SizedBox(height: 4),
+                      Text(
+                        "${(amount < 0) ^ isDone ? '' : '+'}₹${amount.abs().toStringAsFixed(2)}",
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: txColor,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        "${date.day}/${date.month}/${date.year}",
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
-          ],
+              if (isDone)
+                IconButton(
+                  icon: const Icon(Icons.delete, color: AppColor.darkestcolor),
+                  onPressed: () => _deleteIndividualEntry(individual),
+                ),
+            ],
+          ),
         ),
       ),
     );

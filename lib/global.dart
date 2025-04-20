@@ -95,3 +95,11 @@ class CategoryExpense {
   final double amount;
   CategoryExpense(this.category, this.amount);
 }
+
+class AppColor {
+  static const backgroundcolor = Color.fromARGB(255, 220, 242, 251);
+  static const lightercolor = Color.fromARGB(255, 231, 247, 253);
+  static const darkercolor = Color.fromARGB(255, 142, 219, 247);
+  static const moredarkercolor = Color.fromARGB(255, 63, 165, 243);
+  static const darkestcolor = Color.fromARGB(255, 11, 50, 247);
+}

@@ -14,7 +14,6 @@ void main() async {
   final supabaseKey = Secret.SUPABASE_ANON_KEY;
 
   await Supabase.initialize(url: supabaseUrl, anonKey: supabaseKey);
-  print(Supabase.instance.client.auth); // added print statement
   runApp(
     ChangeNotifierProvider(
       create: (context) => TransactionsNotifier(),
@@ -29,8 +28,9 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Expense Map',
+      title: 'Hisab-Kitab',
       theme: ThemeData(
+        fontFamily: 'Helvetica',
         primarySwatch: Colors.blue,
         scaffoldBackgroundColor: Colors.white,
         appBarTheme: const AppBarTheme(
@@ -48,7 +48,7 @@ class MyApp extends StatelessWidget {
             backgroundColor: Colors.blue,
             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(10),
             ),
           ),
         ),
@@ -74,83 +74,82 @@ class SignInPage extends StatefulWidget {
 class _SignInPageState extends State<SignInPage> {
   bool _isLoading = false;
   final _googleSignIn = GoogleSignIn();
-
   final _supabase = Supabase.instance.client;
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // App Logo
-                const Icon(
-                  Icons.map_outlined,
-                  size: 100,
-                  color: Color(0xFF4285F4),
-                ),
+    return Container(
+      color: AppColor.backgroundcolor,
+      child: Scaffold(
+        backgroundColor: AppColor.backgroundcolor,
+        body: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const SizedBox(height: 20),
 
-                const SizedBox(height: 20),
+                  // Logo
+                  SizedBox(height: 225, child: Image.asset('assets/logo.png')),
 
-                // App Name
-                const Text(
-                  'Expense Map',
-                  style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
-                ),
+                  const SizedBox(height: 24),
 
-                const SizedBox(height: 8),
+                  // App Name (Optional, you may want to add it)
 
-                // App Tagline
-                const Text(
-                  'Track your expenses, visualize your spending',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 16, color: Colors.grey),
-                ),
-
-                const SizedBox(height: 50),
-
-                // Sign in Button
-                _isLoading
-                    ? const CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        Color(0xFF4285F4),
-                      ),
-                    )
-                    : ElevatedButton.icon(
-                      label: const Text(
-                        'Sign in with Google',
-                        style: TextStyle(fontSize: 16, color: Colors.black87),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: Colors.black87,
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 12,
-                          horizontal: 16,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          side: const BorderSide(color: Colors.grey, width: 1),
-                        ),
-                        minimumSize: const Size(double.infinity, 50),
-                      ),
-                      onPressed: _signInWithGoogle,
+                  // Tagline
+                  const Text(
+                    'Track your expenses, visualize your spending and split your money evenly',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 16,
+                      color:
+                          AppColor.moredarkercolor, // Slightly themed gray-blue
                     ),
+                  ),
 
-                const SizedBox(height: 20),
+                  const SizedBox(height: 48),
 
-                // Terms and Privacy
-                const Text(
-                  'By signing in, you agree to our Terms of Service and Privacy Policy',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 12, color: Color(0xFF9E9E9E)),
-                ),
-              ],
+                  // Google Sign-in Button
+                  _isLoading
+                      ? const CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          Color.fromARGB(255, 8, 79, 246), // Blue spinner
+                        ),
+                      )
+                      : ElevatedButton(
+                        onPressed: _signInWithGoogle,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColor.lightercolor,
+                          foregroundColor: Color.fromARGB(255, 41, 101, 242),
+                          elevation: 2,
+                          shadowColor: Colors.blue.shade100,
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 14,
+                            horizontal: 20,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            // side: BorderSide(
+                            //   color: Color.fromARGB(255, 8, 79, 246),
+                            //   width: 1.2,
+                            // ),
+                          ),
+                          minimumSize: const Size(double.infinity, 50),
+                        ),
+                        child: const Text(
+                          'Sign in with Google',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+
+                  const SizedBox(height: 30),
+                ],
+              ),
             ),
           ),
         ),
@@ -164,65 +163,46 @@ class _SignInPageState extends State<SignInPage> {
         _isLoading = true;
       });
       final GoogleSignIn _googleSignIn = GoogleSignIn(
-        clientId:
-            "784636982557-of7hktstodckistnt9irqa643vub4rdn.apps.googleusercontent.com", // Set explicitly
+        clientId: Secret.GOOGLE_WEB_CLIENT_ID,
+
         scopes: ['email'],
       );
-      // Disconnect any previous session to allow selection of a different account
 
-      // try {
-      //   await _googleSignIn.disconnect();
-      // } catch (e) {
-      //   print("Error disconnecting: $e");
-      // }
-      print("Signing in with Google");
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      print("hello1");
-
       if (googleUser == null) {
-        // User canceled the sign-in flow
         setState(() {
           _isLoading = false;
         });
         return;
       }
-      // Get auth details from Google
+
       final GoogleSignInAuthentication googleAuth =
           await googleUser.authentication;
-      print("hello"); //
-      // Sign in to Supabase with Google OAuth
+
       final AuthResponse res = await _supabase.auth.signInWithIdToken(
         provider: OAuthProvider.google,
         idToken: googleAuth.idToken!,
         accessToken: googleAuth.accessToken,
       );
+
       if (res.user != null) {
-        print("successfully authenticated");
-        // Check if user exists in the user table
         final response = await _supabase
             .from('users')
             .select()
             .eq('id', res.user!.id);
-        print("response: $response");
 
         if (response.isEmpty) {
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(builder: (context) => CreateAccount()),
           );
-
-          print("why reached here...");
         } else {
           Global.userId = Supabase.instance.client.auth.currentUser?.id;
-          // Successfully signed in
           Navigator.of(
             context,
           ).pushReplacement(MaterialPageRoute(builder: (context) => Home()));
         }
       }
     } catch (error) {
-      setState(() {
-        _isLoading = false;
-      });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error: ${error.toString()}'),

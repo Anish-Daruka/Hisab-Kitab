@@ -7,6 +7,7 @@ import 'transaction.dart';
 import 'analytics.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'group.dart';
+import 'global.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -22,31 +23,55 @@ class _HomeState extends State<Home> {
   Widget build(BuildContext context) {
     final user = supabase.auth.currentUser;
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('ExpenseMap'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              try {
-                await _googleSignIn.disconnect();
-              } catch (e) {
-                print("Error disconnecting: $e");
-              }
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (context) => const SignInPage()),
-              );
-            },
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            backgroundColor: AppColor.backgroundcolor,
+            pinned: false,
+            floating: true,
+            snap: true,
+            title: const Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Hisab Kitab',
+                style: TextStyle(
+                  color: AppColor.darkestcolor,
+                  fontSize: 26, // Increased font size
+                  fontWeight: FontWeight.bold, // Made text bold
+                ),
+              ),
+            ),
+            actions: [
+              IconButton(
+                icon: const Icon(
+                  Icons.logout,
+                  color: AppColor.darkestcolor,
+                  size: 28, // Increased icon size
+                ),
+                onPressed: () async {
+                  try {
+                    await _googleSignIn.disconnect();
+                  } catch (e) {
+                    print("Error disconnecting: $e");
+                  }
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(builder: (context) => const SignInPage()),
+                  );
+                },
+              ),
+            ],
+          ),
+          SliverFillRemaining(
+            child: IndexedStack(
+              index: _selectedIndex,
+              children: [Transaction(), Analytics(), GroupPage()],
+            ),
           ),
         ],
       ),
-      // Updated body using IndexedStack to navigate screens in place
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: [Transaction(), Analytics(), GroupPage()],
-      ),
       bottomNavigationBar: BottomNavigationBar(
         elevation: 8,
+        backgroundColor: AppColor.backgroundcolor,
         currentIndex: _selectedIndex,
         onTap: (int index) {
           setState(() {
@@ -54,12 +79,15 @@ class _HomeState extends State<Home> {
           });
         },
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
           BottomNavigationBarItem(
-            icon: Icon(Icons.analytics),
+            icon: Icon(Icons.home),
+            label: 'Transactions',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.pie_chart),
             label: 'Analytics',
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.share), label: 'Share'),
+          BottomNavigationBarItem(icon: Icon(Icons.group), label: 'Groups'),
         ],
       ),
     );

@@ -184,7 +184,7 @@ class _GroupMemberPageState extends State<GroupMemberPage> with ChangeNotifier {
                           style: ElevatedButton.styleFrom(
                             backgroundColor:
                                 _transactionType == "Paid"
-                                    ? Colors.blue
+                                    ? AppColor.moredarkercolor
                                     : Colors.grey,
                           ),
                           child: const Text("Paid"),
@@ -198,7 +198,7 @@ class _GroupMemberPageState extends State<GroupMemberPage> with ChangeNotifier {
                           style: ElevatedButton.styleFrom(
                             backgroundColor:
                                 _transactionType == "Received"
-                                    ? Colors.blue
+                                    ? AppColor.moredarkercolor
                                     : Colors.grey,
                           ),
                           child: const Text("Received"),
@@ -464,7 +464,7 @@ class _GroupMemberPageState extends State<GroupMemberPage> with ChangeNotifier {
               style: TextStyle(fontSize: 16, color: txColor),
             ),
             IconButton(
-              icon: const Icon(Icons.done, color: Colors.blue),
+              icon: const Icon(Icons.delete, color: AppColor.moredarkercolor),
               onPressed: () {
                 _markNotificationDone(note);
                 _done(transac, amount);
@@ -515,7 +515,7 @@ class _GroupMemberPageState extends State<GroupMemberPage> with ChangeNotifier {
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
                 color: Colors.blue.shade50,
-                border: Border.all(color: Colors.blue),
+                border: Border.all(color: AppColor.moredarkercolor),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: DropdownButton<String>(
@@ -647,7 +647,7 @@ class _GroupMemberPageState extends State<GroupMemberPage> with ChangeNotifier {
                   fetchGroupMembers();
                   String payer, receiver;
                   // Mark notification in desired format:
-                  if (amount < 0) {
+                  if (amount > 0) {
                     receiver = getUserNamebyId?[_selectedUserId!] ?? 'Unknown';
                     payer = getUserNamebyId?[userId] ?? 'Unknown';
                   } else {
@@ -655,7 +655,7 @@ class _GroupMemberPageState extends State<GroupMemberPage> with ChangeNotifier {
                     receiver = getUserNamebyId?[userId] ?? 'Unknown';
                   }
                   String notificationMessage =
-                      "${getUserNamebyId?[_selectedUserId!] ?? 'Unknown'} -> $payer paid ${amount.abs().toStringAsFixed(0)} to $receiver";
+                      "${getUserNamebyId![Global.userId]} -> $payer paid ${amount.abs().toStringAsFixed(0)} to $receiver";
                   await _appendNotification(notificationMessage);
                 },
                 child: const Text("Confirm"),

@@ -17,12 +17,18 @@ final TextEditingController _categoryController = TextEditingController();
 final TextEditingController _descriptionController = TextEditingController();
 String transaction_type = "expense";
 
-String selectedCategory = 'Food';
+String selectedCategory = 'Party';
 final List<String> categories = [
   'Food',
+  'Health',
+  'Education',
+  'Salary',
+  'Party',
+  'Groceries',
+  'Hobby',
   'Travel',
   'Shopping',
-  'Bills',
+  'Housing',
   'Other',
 ];
 
@@ -107,7 +113,7 @@ class _TransactionState extends State<Transaction> {
     });
     _amountController.clear();
     _descriptionController.clear();
-    selectedCategory = 'Food';
+    selectedCategory = 'Party';
     print("transaction added....");
     Provider.of<TransactionsNotifier>(
       context,
@@ -120,129 +126,138 @@ class _TransactionState extends State<Transaction> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Colors.blue.shade50,
+      color: AppColor.backgroundcolor,
       child: Column(
         children: [
           Padding(
             padding: const EdgeInsets.all(16.0),
-            child: Card(
-              color: Color.fromARGB(255, 186, 226, 248),
-              elevation: 4,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
                   children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.currency_rupee),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: TextField(
-                            controller: _amountController,
-                            keyboardType: TextInputType.number,
-                            decoration: InputDecoration(
-                              labelText: 'Amount',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(
-                                vertical: 12,
-                                horizontal: 16,
-                              ),
-                            ),
+                    const Icon(Icons.currency_rupee),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: TextField(
+                        controller: _amountController,
+                        keyboardType: TextInputType.number,
+                        decoration: InputDecoration(
+                          labelText: 'Amount',
+                          fillColor: AppColor.lightercolor,
+                          filled: true,
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.all(Radius.circular(12)),
+                            borderSide: BorderSide.none,
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.all(Radius.circular(12)),
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 12,
+                            horizontal: 16,
                           ),
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        const Icon(Icons.description),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: TextField(
-                            controller: _descriptionController,
-                            decoration: InputDecoration(
-                              labelText: 'Description',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(
-                                vertical: 12,
-                                horizontal: 16,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text('Category:'),
-                        DropdownButton<String>(
-                          value: selectedCategory,
-                          onChanged: (String? newValue) {
-                            setState(() {
-                              selectedCategory = newValue!;
-                            });
-                          },
-                          items:
-                              categories.map<DropdownMenuItem<String>>((
-                                String value,
-                              ) {
-                                return DropdownMenuItem<String>(
-                                  value: value,
-                                  child: Text(value),
-                                );
-                              }).toList(),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        ChoiceChip(
-                          label: const Text('Spent'),
-                          selected: transaction_type == "Expense",
-                          onSelected: (_) {
-                            setState(() {
-                              transaction_type = "Expense";
-                            });
-                          },
-                        ),
-                        ChoiceChip(
-                          label: const Text('Income'),
-                          selected: transaction_type == "Income",
-                          onSelected: (_) {
-                            setState(() {
-                              transaction_type = "Income";
-                            });
-                          },
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-
-                    ElevatedButton(
-                      onPressed:
-                          _amountController.text.isNotEmpty &&
-                                  _descriptionController.text.isNotEmpty
-                              ? _addTransaction
-                              : null,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
                       ),
-                      child: const Text('Add Transaction'),
                     ),
                   ],
                 ),
-              ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    const Icon(Icons.description),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: TextField(
+                        controller: _descriptionController,
+                        decoration: InputDecoration(
+                          labelText: 'Description',
+                          fillColor: AppColor.lightercolor,
+                          filled: true,
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.all(Radius.circular(12)),
+                            borderSide: BorderSide.none,
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.all(Radius.circular(12)),
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 12,
+                            horizontal: 16,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    const Text('Category:'),
+                    const SizedBox(width: 8),
+                    DropdownButton<String>(
+                      value: selectedCategory,
+                      onChanged: (String? newValue) {
+                        setState(() {
+                          selectedCategory = newValue!;
+                        });
+                      },
+                      items:
+                          categories.map<DropdownMenuItem<String>>((
+                            String value,
+                          ) {
+                            return DropdownMenuItem<String>(
+                              value: value,
+                              child: Text(value),
+                            );
+                          }).toList(),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    ChoiceChip(
+                      label: const Text('Spent'),
+                      selected: transaction_type == "Expense",
+                      // selectedColor: const Color.fromARGB(255, 255, 255, 255), // Set selected color
+                      onSelected: (_) {
+                        setState(() {
+                          transaction_type = "Expense";
+                        });
+                      },
+                    ),
+                    ChoiceChip(
+                      label: const Text('Income'),
+                      selected: transaction_type == "Income",
+                      // selectedColor: AppColor.darkercolor, // Set selected color
+                      onSelected: (_) {
+                        setState(() {
+                          transaction_type = "Income";
+                        });
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Center(
+                  child: ElevatedButton(
+                    onPressed:
+                        _amountController.text.isNotEmpty &&
+                                _descriptionController.text.isNotEmpty
+                            ? _addTransaction
+                            : null,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColor.darkercolor,
+                    ),
+                    child: const Text('Add Transaction'),
+                  ),
+                ),
+              ],
             ),
           ),
           Expanded(
@@ -254,48 +269,61 @@ class _TransactionState extends State<Transaction> {
                       itemCount: transactions.length,
                       itemBuilder: (context, index) {
                         final transaction = transactions[index];
-                        // Determine card color depending on amount > 0 (green) or < 0 (red)
+                        // Determine text color and weight based on amount
                         final double amt =
                             transaction['amount'] is double
                                 ? transaction['amount']
                                 : double.parse(
                                   transaction['amount'].toString(),
                                 );
-                        final Color cardColor =
-                            amt > 0
-                                ? const Color.fromARGB(255, 248, 179, 189)
-                                : const Color.fromARGB(255, 184, 253, 190);
-                        final BorderSide borderSide = BorderSide(
-                          color:
-                              amt > 0
-                                  ? const Color.fromARGB(255, 249, 139, 132)
-                                  : const Color.fromARGB(255, 146, 249, 149),
-                          width: 1,
-                        );
+                        final Color textColor =
+                            amt > 0 ? Colors.red : Colors.green;
+                        final FontWeight textWeight = FontWeight.bold;
 
                         return Card(
-                          color: cardColor,
-                          elevation: 2,
+                          color: AppColor.lightercolor,
                           margin: const EdgeInsets.symmetric(
                             horizontal: 10,
                             vertical: 6,
                           ),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            side: borderSide, // added boundary to the card
+                            borderRadius: BorderRadius.circular(
+                              8,
+                            ), // added boundary to the card
                           ),
+
                           child: ListTile(
-                            title: Text('${transaction['description']}'),
-                            subtitle: Text('₹${transaction['amount'].abs()}'),
+                            title: Text(
+                              '${transaction['description']}',
+                              style: TextStyle(
+                                fontWeight: textWeight,
+                                fontSize: 18,
+                              ),
+                            ),
+                            subtitle: Text(
+                              '${amt > 0 ? '' : '+'}₹${transaction['amount'].abs()}',
+                              style: TextStyle(
+                                color: textColor,
+                                fontWeight: textWeight,
+                                fontSize: 18,
+                              ),
+                            ),
                             trailing: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Text('${transaction['category']}'),
+                                Text(
+                                  '${transaction['category']}',
+                                  style: TextStyle(
+                                    fontWeight: textWeight,
+                                    fontSize: 18,
+                                  ),
+                                ),
+
                                 const SizedBox(width: 10),
                                 IconButton(
                                   icon: const Icon(
                                     Icons.delete,
-                                    color: Colors.red,
+                                    color: AppColor.darkestcolor,
                                   ),
                                   onPressed: () {
                                     Provider.of<TransactionsNotifier>(
