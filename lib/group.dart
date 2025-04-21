@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:hisab_kitab/group_member.dart';
-import 'package:hisab_kitab/home.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'global.dart';
 import 'group_member.dart';
@@ -267,6 +265,7 @@ class _GroupPageState extends State<GroupPage> {
     return Container(
       color: AppColor.backgroundcolor,
       child: Scaffold(
+        backgroundColor: AppColor.backgroundcolor,
         floatingActionButton: FloatingActionButton(
           onPressed: () {
             showDialog(
@@ -296,192 +295,167 @@ class _GroupPageState extends State<GroupPage> {
           },
           child: Icon(Icons.add),
         ),
-        body: Stack(
-          children: [
-            Container(color: AppColor.backgroundcolor),
-            Positioned(
-              top: 90,
-              child: SizedBox(
-                height: MediaQuery.of(context).size.height,
-                width: MediaQuery.of(context).size.width,
-                child: Column(
-                  children: [
-                    Positioned(
-                      top: 16,
-                      left: 16,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          SizedBox(
-                            width: 100,
-                            height: 40,
-                            child: TextButton(
-                              style: TextButton.styleFrom(
-                                backgroundColor:
-                                    _state == 1
-                                        ? AppColor.moredarkercolor
-                                        : Colors.grey,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8.0),
-                                ),
-                              ),
-                              onPressed: () {
-                                setState(() {
-                                  _state = 1;
-                                  _searchController.clear();
-                                  _searchResults = [];
-                                });
-                              },
-                              child: const Text(
-                                'Groups',
-                                style: TextStyle(color: Colors.white),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 26),
-                          SizedBox(
-                            width: 100,
-                            height: 40,
-                            child: TextButton(
-                              style: TextButton.styleFrom(
-                                backgroundColor:
-                                    _state == 0
-                                        ? AppColor.moredarkercolor
-                                        : Colors.grey,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8.0),
-                                ),
-                              ),
-                              onPressed: () {
-                                setState(() {
-                                  _state = 0;
-                                  _searchController.clear();
-                                  _searchResults = [];
-                                });
-                              },
-                              child: const Text(
-                                'Individual',
-                                style: TextStyle(color: Colors.white),
-                              ),
-                            ),
-                          ),
-                        ],
+        body: SafeArea(
+          child: Column(
+            children: [
+              // Search bar
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  height: 40,
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: 'Search user by username',
+                      hintStyle: TextStyle(fontSize: 15, color: Colors.grey),
+                      suffixIcon: IconButton(
+                        icon: Icon(Icons.search),
+                        onPressed: _searchUsers,
                       ),
+                      filled: true,
+                      fillColor: const Color.fromARGB(255, 251, 251, 251),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide.none,
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: EdgeInsets.symmetric(horizontal: 8),
                     ),
-                    const SizedBox(height: 16),
-                    Container(
-                      child: SingleChildScrollView(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Column(
-                              children:
-                                  (_state == 1)
-                                      ? _myGroups.isEmpty
-                                          ? [
-                                            const SizedBox(height: 10),
-                                            Text('No groups available'),
-                                          ]
-                                          : _myGroups.map((group) {
-                                            return ListTile(
-                                              title: EachGroup(group),
-                                            );
-                                          }).toList()
-                                      : _individual.isEmpty
-                                      ? [
-                                        const SizedBox(height: 10),
-                                        Text('No pending settlements'),
-                                      ]
-                                      : _individual.map((individual) {
-                                        return ListTile(
-                                          title: EachIndividual(individual),
-                                        );
-                                      }).toList(),
-                            ),
-                          ],
+                    onChanged: (val) {
+                      _searchUsers();
+                    },
+                  ),
+                ),
+              ),
+
+              // Toggle buttons
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: 100,
+                    height: 40,
+                    child: TextButton(
+                      style: TextButton.styleFrom(
+                        backgroundColor:
+                            _state == 1
+                                ? AppColor.moredarkercolor
+                                : Colors.grey,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8.0),
                         ),
                       ),
+                      onPressed: () {
+                        setState(() {
+                          _state = 1;
+                          _searchController.clear();
+                          _searchResults = [];
+                        });
+                      },
+                      child: const Text(
+                        'Groups',
+                        style: TextStyle(color: Colors.white),
+                      ),
                     ),
-                  ],
-                ),
-              ),
-            ),
-
-            Positioned(
-              top: 16,
-              right: 8,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                height: 40,
-                width: 370,
-                child: TextField(
-                  controller: _searchController,
-                  decoration: InputDecoration(
-                    hintText: 'Search user by username',
-                    hintStyle: TextStyle(fontSize: 15, color: Colors.grey),
-                    suffixIcon: IconButton(
-                      icon: Icon(Icons.search),
-                      onPressed: _searchUsers,
-                    ),
-                    filled: true,
-                    fillColor: const Color.fromARGB(255, 251, 251, 251),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide.none,
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide.none,
-                    ),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 8),
                   ),
-                  onChanged: (val) {
-                    _searchUsers();
-                  },
-                ),
+                  const SizedBox(width: 26),
+                  SizedBox(
+                    width: 100,
+                    height: 40,
+                    child: TextButton(
+                      style: TextButton.styleFrom(
+                        backgroundColor:
+                            _state == 0
+                                ? AppColor.moredarkercolor
+                                : Colors.grey,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8.0),
+                        ),
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _state = 0;
+                          _searchController.clear();
+                          _searchResults = [];
+                        });
+                      },
+                      child: const Text(
+                        'Individual',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ),
 
-            if (_searchController.text.isNotEmpty && _searchResults.isNotEmpty)
-              Positioned(
-                top: 60,
-                right: 16,
-                child: SizedBox(
+              const SizedBox(height: 16),
+
+              // Search results dropdown (conditionally shown)
+              if (_searchController.text.isNotEmpty &&
+                  _searchResults.isNotEmpty)
+                Container(
                   width: 250,
-                  height: 250,
-                  child: SingleChildScrollView(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(8),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black26,
-                            blurRadius: 4,
-                            offset: Offset(0, 2),
-                          ),
-                        ],
+                  height: 200,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black26,
+                        blurRadius: 4,
+                        offset: Offset(0, 2),
                       ),
-                      child: ListView(
-                        shrinkWrap: true,
-                        children:
-                            _searchResults.map((user) {
-                              return ListTile(
-                                title: Text(user['user_name']),
-                                onTap: () {
-                                  _sendJoinRequest(user['id']);
-                                },
-                              );
-                            }).toList(),
-                      ),
-                    ),
+                    ],
+                  ),
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: _searchResults.length,
+                    itemBuilder: (context, index) {
+                      final user = _searchResults[index];
+                      return ListTile(
+                        title: Text(user['user_name'] ?? 'Unknown'),
+                        onTap: () {
+                          _sendJoinRequest(user['id']);
+                        },
+                      );
+                    },
                   ),
                 ),
+
+              // Main content list
+              Expanded(
+                child:
+                    _state == 1
+                        ? _myGroups.isEmpty
+                            ? Center(child: Text('No groups available'))
+                            : ListView.builder(
+                              itemCount: _myGroups.length,
+                              itemBuilder: (context, index) {
+                                return ListTile(
+                                  title: EachGroup(_myGroups[index]),
+                                );
+                              },
+                            )
+                        : _individual.isEmpty
+                        ? Center(child: Text('No pending settlements'))
+                        : ListView.builder(
+                          itemCount: _individual.length,
+                          itemBuilder: (context, index) {
+                            return ListTile(
+                              title: EachIndividual(_individual[index]),
+                            );
+                          },
+                        ),
               ),
-          ],
+            ],
+          ),
         ),
       ),
     );
