@@ -1,16 +1,6 @@
-# hisab_kitab
+# Hisab Kitab
 
-A new Flutter project.
+**Hisab Kitab** is a smart expense tracking app that helps you take control of your finances. Whether you're managing personal spending or tracking shared group expenses, Hisab Kitab makes it easy to record transactions, split costs, and stay on top of your budget. It's perfect for friends, roommates, or anyone who needs a simple yet powerful way to manage money.
+Ideal for sharing group expenses during trips or treks, and keeping track of pending transactions so nothing gets forgotten.
 
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+👉 [Download the app here](https://drive.google.com/file/d/1BGP1hMYA59BOh6va5Duba4cGGhVFI00Q/view?usp=drive_link)
